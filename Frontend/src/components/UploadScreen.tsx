@@ -216,9 +216,7 @@ export default function UploadScreen({ onUpload }: UploadScreenProps) {
           </button>
         </div>
 
-        <p className="mt-8 text-[11px] text-zinc-700">
-          Documents are processed locally — no data leaves your session.
-        </p>
+        
       </div>
     </div>
   );
