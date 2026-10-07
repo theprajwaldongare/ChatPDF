@@ -1,0 +1,59 @@
+{
+  "time": 1791349243929,
+  "blocks": [
+    {
+      "id": "IyXCiAcXd_",
+      "type": "header",
+      "data": {
+        "text": "Changes To Be Done in Frontend",
+        "level": 2
+      }
+    },
+    {
+      "id": "Y2lKzC6Ilj",
+      "type": "list",
+      "data": {
+        "style": "checklist",
+        "meta": {},
+        "items": [
+          {
+            "content": "Remove the scrollbar first page ",
+            "meta": {
+              "checked": false
+            },
+            "items": []
+          },
+          {
+            "content": "Remove the First page \"Documents are processed locally\"",
+            "meta": {
+              "checked": false
+            },
+            "items": []
+          },
+          {
+            "content": "First question will take time ..so decide how its processed ..like in frontpage ask first question or in the second page ..add a wating phase for question till all indexing etc stuff wont complete",
+            "meta": {
+              "checked": false
+            },
+            "items": []
+          },
+          {
+            "content": "Second page left panel like chatgpt not stats or retrival etc additional info ..",
+            "meta": {
+              "checked": false
+            },
+            "items": []
+          },
+          {
+            "content": "Initally single document on a chat only",
+            "meta": {
+              "checked": false
+            },
+            "items": []
+          }
+        ]
+      }
+    }
+  ],
+  "version": "2.31.5"
+}
