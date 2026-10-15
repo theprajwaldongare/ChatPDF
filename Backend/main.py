@@ -4,6 +4,7 @@ import shutil
 import asyncio
 import uvicorn
 import tempfile
+from openai import OpenAI
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from langchain_qdrant import QdrantVectorStore
@@ -22,6 +23,11 @@ app.add_middleware(
     allow_origins=["*"],  
     allow_methods=["*"],
     allow_headers=["*"],  
+)
+
+client = OpenAI(
+    api_key=os.getenv("GEMINI_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/"
 )
 
 
@@ -96,10 +102,46 @@ async def catch_file(file: UploadFile = File(...)):
         
     return StreamingResponse(progress(), media_type="application/json")
 
+@app.post("/chat")
+async def chatWithPdf(question: str):
+    try:
+        embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+        vector_db = QdrantVectorStore.from_existing_collection(
+            embedding=embeddings,
+            collection_name="chatpdf",
+            url=os.getenv("QDRANT_URL"),
+            api_key=os.getenv("QDRANT_API_KEY")
+        )
+
+        
+        searchResult = vector_db.similarity_search(query=question)
+        context = "\n\n\n".join([f"Page Content: {result.page_content}\nPage Number: {result.metadata['page_label']}\nFile Location: {result.metadata['source']}" for result in searchResult])
 
 
+        SYSTEM_PROMPT = f"""
+        You are a helpfull AI Assistant who answers user query based on the available context retrieved from a PDF file along with page_contents and page number.
 
+        You should only answer the user based on the following context and navigate the user to open the right page number to know more.
 
+        Context:
+        {context}
+        """
+
+        
+        response = client.chat.completions.create(
+            model="gemini-3.5-flash-lite",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": question}
+            ]
+        )
+
+        return {"answer": response.choices[0].message.content}
+
+    except Exception as e:
+        print(f"Error during chat: {e}")
+        return {"error": "Failed to process chat request"}
 
 
 
