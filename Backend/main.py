@@ -4,11 +4,16 @@ import shutil
 import asyncio
 import uvicorn
 import tempfile
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
+from langchain_qdrant import QdrantVectorStore
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 
+load_dotenv()
 
 app = FastAPI()
 
@@ -36,9 +41,6 @@ async def catch_file(file: UploadFile = File(...)):
             yield json.dumps({"status": "Processing file..."}) + "\n"
             await asyncio.sleep(0.1)
     
-            # this load complete file into server ram ... so for large files it is not recommended
-            # content = await file.read()
-            # print(f"File name: {file.filename}, Size: {len(content)} bytes")
 
             with tempfile.NamedTemporaryFile(delete=False,suffix=".pdf") as tempPdf:
                 shutil.copyfileobj(file.file, tempPdf)
@@ -49,23 +51,40 @@ async def catch_file(file: UploadFile = File(...)):
 
             
             loader = PyPDFLoader(tempFilePath)
+            documents = loader.load()
 
             yield json.dumps({"status": "Splitting into chunks..."}) + "\n"
             await asyncio.sleep(0.1)
 
-            pages = loader.load_and_split()
-            print(f"Loaded {len(pages)} pages from the PDF.")
+            # pages = loader.load_and_split()
+            textSplitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000, chunk_overlap=400
+            )
+            chunks = textSplitter.split_documents(documents)
+            # chunks = textSplitter.split_documents(pages)
+            print(f"Loaded {len(chunks)} chunks from the PDF.")
+
+            yield json.dumps({"status": "Making embeddings..."}) + "\n"
+            await asyncio.sleep(0.1)
+
+            embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+            vectorStore = QdrantVectorStore.from_documents(
+                documents=chunks,
+                embedding=embeddings,
+                collection_name="chatpdf",
+                url=os.getenv("QDRANT_URL"),
+                api_key=os.getenv("QDRANT_API_KEY"),
+                timeout=60
+            )
+
 
             yield json.dumps({
                 "status": "Done!", 
                 "complete": True,
-                "chunks_created": len(pages)
+                "chunks_created": len(chunks)
             }) + "\n"
 
-            # return {
-            #     "message": "PDF processed successfully!", 
-            #     "chunks_created": len(pages)
-            # }
         except Exception as e:
             print(f"Error processing PDF: {e}")
             # return {"error": "Failed to process PDF"}

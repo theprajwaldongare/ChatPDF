@@ -1,3 +1,4 @@
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from openai import OpenAI
@@ -11,10 +12,12 @@ client = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/"
 )
 
-embeddings = GoogleGenerativeAIEmbeddings(
-    model="gemini-embedding-2-preview",
-    google_api_key=os.getenv("GEMINI_API_KEY")
-)
+# embeddings = GoogleGenerativeAIEmbeddings(
+#     model="gemini-embedding-2-preview",
+#     google_api_key=os.getenv("GEMINI_API_KEY")
+# )
+
+embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 question = input("Enter your query: ")
 
