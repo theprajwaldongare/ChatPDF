@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useCallback, useRef, useState } from 'react';
 import { FileText, UploadCloud, X, Sparkles, Search, ShieldCheck, Zap } from 'lucide-react';
 
@@ -12,7 +13,8 @@ const FEATURES = [
 ];
 
 
-export default function UploadScreen({ onUpload }: UploadScreenProps) {
+export default function UploadScreen() {
+  const navigate = useNavigate();
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +55,8 @@ export default function UploadScreen({ onUpload }: UploadScreenProps) {
   const onProceed = async () => {
     if (!fileContent || !fileName) return;
 
+    const conversationId = crypto.randomUUID();
+
     if (uploadRef.current) {
       uploadRef.current.textContent = "Uploading file...";
       uploadRef.current.disabled = true;
@@ -60,10 +64,9 @@ export default function UploadScreen({ onUpload }: UploadScreenProps) {
 
     const formData = new FormData();
     formData.append('file', fileContent);
+    formData.append('conversation_id', conversationId);
 
     try {
-
-      // if (uploadRef.current) uploadRef.current.textContent = "Processing PDF...";
 
       const response = await fetch('http://localhost:8000/upload', {
         method: 'POST',
@@ -98,34 +101,17 @@ export default function UploadScreen({ onUpload }: UploadScreenProps) {
           }
 
           if(data.complete) {
+
+            const newChat = {id: conversationId, name: fileName};
+            localStorage.setItem(`chat_${conversationId}`, JSON.stringify(newChat));
             setTimeout(() => {
-              onUpload(fileName);
+              // onUpload(fileName);
+              navigate(`/chat/${conversationId}`);
             }, 800);
           }
         }
       }
 
-      //   if (response.ok) {
-      //     const data = await response.json();
-      //     console.log("Backend says:", data);
-
-
-      //     onUpload(fileName);
-      //   } else {
-      //     setError("Failed to upload file to backend");
-      //     if (uploadRef.current) {
-      //       uploadRef.current.textContent = "Something went wrong";
-      //       uploadRef.current.disabled = false;
-      //     }
-      //   }
-      // } catch (err) {
-      //   console.error(err);
-      //   setError("Something went wrong while uploading the file.");
-
-      //   if (uploadRef.current) {
-      //     uploadRef.current.textContent = "Something went wrong";
-      //     uploadRef.current.disabled = false;
-    // }
     } catch (err) {
       console.error(err);
       setError("Something went wrong while uploading the file.");

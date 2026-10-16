@@ -7,10 +7,12 @@ import tempfile
 from openai import OpenAI
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile
+from qdrant_client import QdrantClient
+from qdrant_client.http import models as rest
 from langchain_qdrant import QdrantVectorStore
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, File, UploadFile,Form
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
@@ -33,13 +35,17 @@ client = OpenAI(
 
 class ChatRequest(BaseModel):
     question: str
+    conversation_id: str
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 @app.post("/upload")
-async def catch_file(file: UploadFile = File(...)):
+async def catch_file(
+    file: UploadFile = File(...),
+    conversation_id: str = Form(...)
+    ):
 
     if file is None:
         return {"error": "No file uploaded"}
@@ -70,7 +76,10 @@ async def catch_file(file: UploadFile = File(...)):
                 chunk_size=1000, chunk_overlap=400
             )
             chunks = textSplitter.split_documents(documents)
-            # chunks = textSplitter.split_documents(pages)
+            
+            for chunk in chunks:
+                chunk.metadata["conversation_id"] = conversation_id
+                
             print(f"Loaded {len(chunks)} chunks from the PDF.")
 
             yield json.dumps({"status": "Making embeddings..."}) + "\n"
@@ -85,6 +94,17 @@ async def catch_file(file: UploadFile = File(...)):
                 url=os.getenv("QDRANT_URL"),
                 api_key=os.getenv("QDRANT_API_KEY"),
                 timeout=60
+            )
+
+            q_client = QdrantClient(
+                url=os.getenv("QDRANT_URL"),
+                api_key=os.getenv("QDRANT_API_KEY")
+            )
+
+            q_client.create_payload_index(
+                collection_name="chatpdf",
+                field_name="metadata.conversation_id",
+                field_schema=rest.PayloadSchemaType.KEYWORD,
             )
 
 
@@ -121,7 +141,18 @@ async def chatWithPdf(request: ChatRequest):
         )
 
         
-        searchResult = vector_db.similarity_search(query=question)
+        # searchResult = vector_db.similarity_search(query=question)
+        searchResult = vector_db.similarity_search(
+            query=question,
+            filter=rest.Filter(
+                must=[
+                    rest.FieldCondition(
+                        key="metadata.conversation_id",
+                        match=rest.MatchValue(value=request.conversation_id),
+                    )
+                ]
+            )
+        )
         context = "\n\n\n".join([f"Page Content: {result.page_content}\nPage Number: {result.metadata['page_label']}\nFile Location: {result.metadata['source']}" for result in searchResult])
 
 

@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowUp, FileText, Plus, MessageSquare, Sparkles, Zap, Search, Loader2 } from 'lucide-react';
@@ -15,7 +16,7 @@ interface Message {
 }
 
 const MOCK_MESSAGES: Message[] = [
-  
+
 ];
 
 const SUGGESTED_QUESTIONS = [
@@ -26,12 +27,29 @@ const SUGGESTED_QUESTIONS = [
 
 let nextId = 100;
 
-export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
+export default function ChatScreen() {
+  const { conversationId } = useParams();
+  const navigate = useNavigate();
+  const [fileName, setFileName] = useState('');
   const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const savedChat = localStorage.getItem(`chat_${conversationId}`);
+    if (savedChat) {
+      const parsedChat = JSON.parse(savedChat);
+      setFileName(parsedChat.name);
+    } else {
+      navigate('/');
+    }
+  }, [conversationId, navigate]);
+
+  const onReset = () => {
+    navigate('/');
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -56,7 +74,7 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ question: trimmed }),
+      body: JSON.stringify({ question: trimmed,conversation_id: conversationId }),
     });
 
     let data = await responseChat.json();
@@ -134,7 +152,7 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
             </div>
           </div>
 
-          
+
         </div>
 
         {/* New Document button */}
@@ -194,9 +212,8 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
             {messages.map((msg, idx) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${
-                  idx === 0 ? '' : 'mt-7'
-                } animate-message-in`}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${idx === 0 ? '' : 'mt-7'
+                  } animate-message-in`}
               >
                 {msg.role === 'ai' && (
                   <div className="mr-3 mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900">
@@ -216,7 +233,7 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
                         : 'rounded-2xl rounded-tl-md border border-zinc-900 bg-zinc-900/30 px-4 py-3 text-sm leading-relaxed text-zinc-300'
                     }
                   >
-                    
+
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {msg.text}
                     </ReactMarkdown>
@@ -287,10 +304,9 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
                 disabled={!input.trim() || isTyping}
                 className={`
                   flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-200
-                  ${
-                    input.trim() && !isTyping
-                      ? 'bg-zinc-100 text-zinc-950 hover:bg-white shadow-md shadow-zinc-100/5'
-                      : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
+                  ${input.trim() && !isTyping
+                    ? 'bg-zinc-100 text-zinc-950 hover:bg-white shadow-md shadow-zinc-100/5'
+                    : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
                   }
                 `}
               >
