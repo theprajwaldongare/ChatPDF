@@ -1,4 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ArrowUp, FileText, Plus, MessageSquare, Sparkles, Zap, Search, Loader2 } from 'lucide-react';
 
 interface ChatScreenProps {
@@ -13,26 +15,7 @@ interface Message {
 }
 
 const MOCK_MESSAGES: Message[] = [
-  {
-    id: 1,
-    role: 'user',
-    text: 'What is this document about?',
-  },
-  {
-    id: 2,
-    role: 'ai',
-    text: 'This document is a technical research paper on scalable retrieval-augmented generation (RAG) architectures. It covers chunking strategies, vector store indexing, and latency optimization techniques for production-level deployment.',
-  },
-  {
-    id: 3,
-    role: 'user',
-    text: 'Can you summarize the key findings?',
-  },
-  {
-    id: 4,
-    role: 'ai',
-    text: 'The paper identifies three core findings:\n\n1. Semantic chunking outperforms fixed-size chunking by 23% in retrieval accuracy.\n2. Hybrid search combining dense and sparse vectors reduces hallucination rates significantly.\n3. Caching intermediate embeddings cuts p99 latency by 40% under concurrent load.',
-  },
+  
 ];
 
 const SUGGESTED_QUESTIONS = [
@@ -59,7 +42,7 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
     }
   }, [messages, isTyping]);
 
-  const sendQuery = (text: string) => {
+  const sendQuery = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isTyping) return;
 
@@ -68,13 +51,23 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
     setIsTyping(true);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
+    let responseChat = await fetch('http://localhost:8000/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ question: trimmed }),
+    });
+
+    let data = await responseChat.json();
+
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
         {
           id: nextId++,
           role: 'ai',
-          text: 'Based on the retrieved context from your document, here is a relevant excerpt that addresses your query. The system identified matching passages and synthesized the response from multiple sections.',
+          text: data.answer || 'Sorry, I could not retrieve an answer for that question.',
         },
       ]);
       setIsTyping(false);
@@ -242,12 +235,10 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
                         : 'rounded-2xl rounded-tl-md border border-zinc-900 bg-zinc-900/30 px-4 py-3 text-sm leading-relaxed text-zinc-300'
                     }
                   >
-                    {msg.text.split('\n').map((line, i) => (
-                      <span key={i}>
-                        {line}
-                        {i < msg.text.split('\n').length - 1 && <br />}
-                      </span>
-                    ))}
+                    
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.text}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>

@@ -5,6 +5,7 @@ import asyncio
 import uvicorn
 import tempfile
 from openai import OpenAI
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile
 from langchain_qdrant import QdrantVectorStore
@@ -30,6 +31,8 @@ client = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/"
 )
 
+class ChatRequest(BaseModel):
+    question: str
 
 @app.get("/")
 async def root():
@@ -103,8 +106,11 @@ async def catch_file(file: UploadFile = File(...)):
     return StreamingResponse(progress(), media_type="application/json")
 
 @app.post("/chat")
-async def chatWithPdf(question: str):
+async def chatWithPdf(request: ChatRequest):
     try:
+
+        question = request.question.strip()
+
         embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
         vector_db = QdrantVectorStore.from_existing_collection(
@@ -123,6 +129,8 @@ async def chatWithPdf(question: str):
         You are a helpfull AI Assistant who answers user query based on the available context retrieved from a PDF file along with page_contents and page number.
 
         You should only answer the user based on the following context and navigate the user to open the right page number to know more.
+
+        You should give good formatted markdown response with new lines, small or big headings based on markdown, numbers in lists, and proper line breaks, code blocks, tables, and lists if needed. You should not answer the user based on your own knowledge or any other source of information. You should only answer based on the context provided below.
 
         Context:
         {context}
