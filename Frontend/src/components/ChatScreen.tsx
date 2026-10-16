@@ -134,26 +134,7 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
             </div>
           </div>
 
-          {/* Stats footer in sidebar */}
-          <div className="px-3 pb-4">
-            <p className="px-2 pb-2 text-[11px] font-medium uppercase tracking-wider text-zinc-700">
-              Session Stats
-            </p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs">
-                <span className="text-zinc-600">Queries</span>
-                <span className="font-mono text-zinc-400">
-                  {messages.filter((m) => m.role === 'user').length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs">
-                <span className="text-zinc-600">Retrievals</span>
-                <span className="font-mono text-zinc-400">
-                  {messages.filter((m) => m.role === 'ai').length}
-                </span>
-              </div>
-            </div>
-          </div>
+          
         </div>
 
         {/* New Document button */}
@@ -183,7 +164,7 @@ export default function ChatScreen({ fileName, onReset }: ChatScreenProps) {
                   Retrieval-augmented chat
                 </span>
                 <span className="hidden sm:inline h-1 w-1 rounded-full bg-zinc-700" />
-                <span className="text-[11px] text-zinc-600 font-mono">RAG v2</span>
+                <span className="text-[11px] text-zinc-600 font-mono">RAG</span>
               </div>
             </div>
           </div>
