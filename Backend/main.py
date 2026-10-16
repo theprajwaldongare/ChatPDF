@@ -161,7 +161,7 @@ async def chatWithPdf(request: ChatRequest):
 
         You should only answer the user based on the following context and navigate the user to open the right page number to know more.
 
-        You should give good formatted markdown response with new lines, small or big headings based on markdown, numbers in lists, and proper line breaks, code blocks, tables, and lists if needed. You should not answer the user based on your own knowledge or any other source of information. You should only answer based on the context provided below.
+        You should give good formatted markdown response with a new lines, blank line, small or big headings based on markdown, numbers in lists, and proper line breaks, code blocks, tables, and lists if needed.
 
         Context:
         {context}

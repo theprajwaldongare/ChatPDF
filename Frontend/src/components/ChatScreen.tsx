@@ -34,6 +34,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,10 +43,26 @@ export default function ChatScreen() {
     if (savedChat) {
       const parsedChat = JSON.parse(savedChat);
       setFileName(parsedChat.name);
+
+      if(parsedChat.messages){
+        setMessages(parsedChat.messages);
+      }
     } else {
       navigate('/');
     }
+    setIsInitialized(true);
   }, [conversationId, navigate]);
+
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    const savedChat = localStorage.getItem(`chat_${conversationId}`);
+    if (savedChat) {
+      const parsedChat = JSON.parse(savedChat);
+      parsedChat.messages = messages;
+      localStorage.setItem(`chat_${conversationId}`, JSON.stringify(parsedChat));
+    }
+  }, [messages, conversationId]);
 
   const onReset = () => {
     navigate('/');
