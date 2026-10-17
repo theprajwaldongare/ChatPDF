@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import {useChatContext} from '@/context/ChatContext';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -25,9 +26,10 @@ const SUGGESTED_QUESTIONS = [
   'List the key limitations',
 ];
 
-let nextId = 100;
+// let nextId = 100;
 
 export default function ChatScreen() {
+  const { history, refreshHistory } = useChatContext();
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const [fileName, setFileName] = useState('');
@@ -39,6 +41,8 @@ export default function ChatScreen() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    setIsInitialized(false);
+
     const savedChat = localStorage.getItem(`chat_${conversationId}`);
     if (savedChat) {
       const parsedChat = JSON.parse(savedChat);
@@ -46,12 +50,18 @@ export default function ChatScreen() {
 
       if(parsedChat.messages){
         setMessages(parsedChat.messages);
+      }else{
+        setMessages([]);
       }
     } else {
       navigate('/');
     }
-    setIsInitialized(true);
+
+    setTimeout(() => {
+      setIsInitialized(true);
+    }, 50);
   }, [conversationId, navigate]);
+
 
 
   useEffect(() => {
@@ -61,8 +71,10 @@ export default function ChatScreen() {
       const parsedChat = JSON.parse(savedChat);
       parsedChat.messages = messages;
       localStorage.setItem(`chat_${conversationId}`, JSON.stringify(parsedChat));
+
+      refreshHistory();
     }
-  }, [messages, conversationId]);
+  }, [messages, conversationId, isInitialized, refreshHistory]);
 
   const onReset = () => {
     navigate('/');
@@ -81,7 +93,7 @@ export default function ChatScreen() {
     const trimmed = text.trim();
     if (!trimmed || isTyping) return;
 
-    setMessages((prev) => [...prev, { id: nextId++, role: 'user', text: trimmed }]);
+    setMessages((prev) => [...prev, { id: Date.now(), role: 'user', text: trimmed }]);
     setInput('');
     setIsTyping(true);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
@@ -100,7 +112,7 @@ export default function ChatScreen() {
       setMessages((prev) => [
         ...prev,
         {
-          id: nextId++,
+          id: Date.now(),
           role: 'ai',
           text: data.answer || 'Sorry, I could not retrieve an answer for that question.',
         },
@@ -168,6 +180,29 @@ export default function ChatScreen() {
               <span className="ml-auto text-[10px] text-zinc-700">{messages.length} msgs</span>
             </div>
           </div>
+
+          {history.length > 1 && (
+            <div className="px-3 pb-4 mt-2 border-t border-zinc-900 pt-4">
+              <p className="px-2 pb-2 text-[11px] font-medium uppercase tracking-wider text-zinc-700">
+                Previous Documents
+              </p>
+              <div className="space-y-1">
+                {history
+                  .filter((chat) => chat.id !== conversationId) // Hide the one we are currently looking at!
+                  .map((chat) => (
+                    <button
+                      key={chat.id}
+                      onClick={() => navigate(`/chat/${chat.id}`)}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200 transition-colors text-left"
+                    >
+                      <FileText className="h-3.5 w-3.5 shrink-0 text-zinc-600" strokeWidth={1.5} />
+                      <span className="truncate flex-1">{chat.name}</span>
+                      {/* <span className="text-[10px] text-zinc-700">{chat.msgCount} msgs</span> */}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
 
 
         </div>
