@@ -162,6 +162,7 @@ async def chatWithPdf(request: ChatRequest):
         You should only answer the user based on the following context and navigate the user to open the right page number to know more.
 
         You should give good formatted markdown response with a new lines, blank line, small or big headings based on markdown, numbers in lists, and proper line breaks, code blocks, tables, and lists if needed.
+        You should use a extra blank line between paragraphs and headings. You should use proper markdown formatting for headings, lists, code blocks, tables, and links.
 
         Context:
         {context}
