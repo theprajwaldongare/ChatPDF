@@ -70,7 +70,7 @@ export default function UploadScreen() {
 
     try {
 
-      const response = await fetch('http://localhost:8000/upload', {
+      const response = await fetch('/upload', {
         method: 'POST',
         body: formData,
       });

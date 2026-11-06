@@ -100,7 +100,7 @@ export default function ChatScreen() {
     setIsTyping(true);
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
-    let responseChat = await fetch('http://localhost:8000/chat', {
+    let responseChat = await fetch('/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -8,6 +8,8 @@ from openai import OpenAI
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from qdrant_client.http import models as rest
 from langchain_qdrant import QdrantVectorStore
 from fastapi.responses import StreamingResponse
@@ -27,6 +29,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],  
 )
+
+print("Loading embedding model into memory...")
+embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+print("Model loaded successfully!")
 
 client = OpenAI(
     api_key=os.getenv("GEMINI_API_KEY"),
@@ -131,7 +137,7 @@ async def chatWithPdf(request: ChatRequest):
 
         question = request.question.strip()
 
-        embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        # embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
         vector_db = QdrantVectorStore.from_existing_collection(
             embedding=embeddings,
@@ -184,7 +190,15 @@ async def chatWithPdf(request: ChatRequest):
         return {"error": "Failed to process chat request"}
 
 
+app.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
 
+@app.get("/{catchall:path}")
+async def serve_react_app(catchall: str):
+    file_path = os.path.join("dist", catchall)
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+    
+    return FileResponse("dist/index.html")
 
 
 
