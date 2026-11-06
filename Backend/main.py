@@ -190,17 +190,20 @@ async def chatWithPdf(request: ChatRequest):
         return {"error": "Failed to process chat request"}
 
 
-app.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DIST_DIR = os.path.join(BASE_DIR, "dist")
+ASSETS_DIR = os.path.join(DIST_DIR, "assets")
+
+app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
 @app.get("/{catchall:path}")
 async def serve_react_app(catchall: str):
-    file_path = os.path.join("dist", catchall)
+    file_path = os.path.join(DIST_DIR, catchall)
     if os.path.isfile(file_path):
         return FileResponse(file_path)
     
-    return FileResponse("dist/index.html")
-
-
+    return FileResponse(os.path.join(DIST_DIR, "index.html"))
 
 
 
