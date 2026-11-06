@@ -89,7 +89,7 @@ async def catch_file(
             yield json.dumps({"status": "Making embeddings..."}) + "\n"
             await asyncio.sleep(0.1)
 
-            embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+            # embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
             vectorStore = QdrantVectorStore.from_documents(
                 documents=chunks,
