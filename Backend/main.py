@@ -43,9 +43,7 @@ class ChatRequest(BaseModel):
     question: str
     conversation_id: str
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+
 
 @app.post("/upload")
 async def catch_file(
